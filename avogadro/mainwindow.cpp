@@ -31,6 +31,7 @@
 #include <avogadro/qtgui/extensionplugin.h>
 #include <avogadro/qtgui/fileformatdialog.h>
 #include <avogadro/qtgui/molecule.h>
+#include <avogadro/qtgui/moleculeinfodialog.h>
 #include <avogadro/qtgui/moleculemodel.h>
 #include <avogadro/qtgui/multiviewwidget.h>
 #include <avogadro/qtgui/periodictableview.h>
@@ -95,7 +96,8 @@ class XMLEventObserver : public pqEventObserver
   QString XMLString;
 
 public:
-  XMLEventObserver(QObject* p) : pqEventObserver(p)
+  XMLEventObserver(QObject* p)
+    : pqEventObserver(p)
   {
     this->XMLStream = nullptr;
   }
@@ -142,7 +144,11 @@ class XMLEventSource : public pqEventSource
   QXmlStreamReader* XMLStream;
 
 public:
-  XMLEventSource(QObject* p) : Superclass(p) { this->XMLStream = nullptr; }
+  XMLEventSource(QObject* p)
+    : Superclass(p)
+  {
+    this->XMLStream = nullptr;
+  }
   ~XMLEventSource() { delete this->XMLStream; }
 
 protected:
@@ -182,36 +188,47 @@ protected:
 };
 #endif
 
-using std::string;
-using std::vector;
 using Io::FileFormat;
 using Io::FileFormatManager;
 using QtGui::CustomElementDialog;
+using QtGui::ExtensionPlugin;
+using QtGui::ExtensionPluginFactory;
 using QtGui::FileFormatDialog;
 using QtGui::Molecule;
+using QtGui::MoleculeInfoDialog;
 using QtGui::RWMolecule;
 using QtGui::ScenePlugin;
 using QtGui::ScenePluginFactory;
 using QtGui::ScenePluginModel;
 using QtGui::ToolPlugin;
 using QtGui::ToolPluginFactory;
-using QtGui::ExtensionPlugin;
-using QtGui::ExtensionPluginFactory;
 using QtOpenGL::GLWidget;
 using QtPlugins::PluginManager;
+using std::string;
+using std::vector;
 #ifdef AVO_USE_VTK
 using VTK::vtkGLWidget;
 #endif
 
 MainWindow::MainWindow(const QStringList& fileNames, bool disableSettings)
-  : m_molecule(nullptr), m_rwMolecule(nullptr), m_moleculeModel(nullptr),
-    m_queuedFilesStarted(false), m_menuBuilder(new MenuBuilder),
-    m_fileReadThread(nullptr), m_fileWriteThread(nullptr),
-    m_threadedReader(nullptr), m_threadedWriter(nullptr),
-    m_progressDialog(nullptr), m_fileReadMolecule(nullptr),
-    m_fileToolBar(new QToolBar(this)), m_toolToolBar(new QToolBar(this)),
-    m_moleculeDirty(false), m_undo(nullptr), m_redo(nullptr),
-    m_viewFactory(new ViewFactory), m_ui(new Ui::MainWindow)
+  : m_molecule(nullptr)
+  , m_rwMolecule(nullptr)
+  , m_moleculeModel(nullptr)
+  , m_queuedFilesStarted(false)
+  , m_menuBuilder(new MenuBuilder)
+  , m_fileReadThread(nullptr)
+  , m_fileWriteThread(nullptr)
+  , m_threadedReader(nullptr)
+  , m_threadedWriter(nullptr)
+  , m_progressDialog(nullptr)
+  , m_fileReadMolecule(nullptr)
+  , m_fileToolBar(new QToolBar(this))
+  , m_toolToolBar(new QToolBar(this))
+  , m_moleculeDirty(false)
+  , m_undo(nullptr)
+  , m_redo(nullptr)
+  , m_viewFactory(new ViewFactory)
+  , m_ui(new Ui::MainWindow)
 {
   m_ui->setupUi(this);
 
@@ -394,7 +411,7 @@ void MainWindow::newMolecule()
   setMolecule(new Molecule(this));
 }
 
-template <class T, class M>
+template<class T, class M>
 void setWidgetMolecule(T* glWidget, M* mol)
 {
   glWidget->setMolecule(mol);
@@ -635,6 +652,9 @@ void MainWindow::backgroundReaderFinished()
                             .arg(m_threadedReader->error()));
     delete m_fileReadMolecule;
   }
+
+  getAdditionalMoleculeInfo(m_threadedReader->fileName());
+
   m_fileReadThread->deleteLater();
   m_fileReadThread = nullptr;
   m_threadedReader->deleteLater();
@@ -698,9 +718,7 @@ void MainWindow::toolActivated()
   }
 }
 
-void MainWindow::viewConfigActivated()
-{
-}
+void MainWindow::viewConfigActivated() {}
 
 void MainWindow::rendererInvalid()
 {
@@ -771,7 +789,7 @@ bool populatePluginModel(ScenePluginModel& model, bool editOnly = false)
   return true;
 }
 
-template <class T>
+template<class T>
 bool populateTools(T* glWidget)
 {
   if (!glWidget->tools().isEmpty())
@@ -917,6 +935,13 @@ void MainWindow::exportGraphics()
   cColor[3] = alpha; // previous color
   scene->setBackgroundColor(cColor);
   glWidget->repaint();
+}
+
+void MainWindow::getAdditionalMoleculeInfo(QString fname)
+{
+  if (m_molecule)
+    MoleculeInfoDialog::resolve(this, *m_molecule,
+                                QFileInfo(fname).suffix().toLower());
 }
 
 void MainWindow::reassignCustomElements()
@@ -1594,8 +1619,8 @@ QString MainWindow::generateFilterString(
 
   // Create a map that groups the file extensions by name:
   QMap<QString, QString> formatMap;
-  for (vector<const FileFormat *>::const_iterator it = formats.begin(),
-                                                  itEnd = formats.end();
+  for (vector<const FileFormat*>::const_iterator it = formats.begin(),
+                                                 itEnd = formats.end();
        it != itEnd; ++it) {
     QString name(QString::fromStdString((*it)->name()));
     vector<string> exts = (*it)->fileExtensions();
