@@ -945,7 +945,10 @@ void MainWindow::exportGraphics()
 void MainWindow::reassignCustomElements()
 {
   if (m_molecule && m_molecule->hasCustomElements())
-    CustomElementDialog::resolve(this, *m_molecule);
+    QMessageBox::information(
+      this, tr("Alert"),
+      tr("Input successfully read, but reader cannot acquire clear topology "
+         "information.\nCustom elements can be assigned from the Build menu."));
 }
 
 void MainWindow::openRecentFile()
