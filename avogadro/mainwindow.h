@@ -361,9 +361,6 @@ private:
    */
   void setupInterface();
 
-  /* Get additional details like natoms if needed. */
-  void getAdditionalMoleculeInfo(QString fname);
-
   /** Show a dialog to remap custom elements, if present. */
   void reassignCustomElements();
 

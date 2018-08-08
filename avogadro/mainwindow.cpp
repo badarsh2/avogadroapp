@@ -630,30 +630,33 @@ bool MainWindow::openFile(const QString& fileName, Io::FileFormat* reader)
 void MainWindow::backgroundReaderFinished()
 {
   QString fileName = m_threadedReader->fileName();
-  if (m_progressDialog->wasCanceled()) {
-    delete m_fileReadMolecule;
-  } else if (m_threadedReader->success()) {
-    if (!fileName.isEmpty()) {
-      m_fileReadMolecule->setData("fileName", fileName.toLocal8Bit().data());
-      m_recentFiles.prepend(fileName);
-      updateRecentFiles();
+  bool res = MoleculeInfoDialog::resolve(
+    this, *m_fileReadMolecule, QFileInfo(fileName).suffix().toLower());
+  if (res) {
+    if (m_progressDialog->wasCanceled()) {
+      delete m_fileReadMolecule;
+    } else if (m_threadedReader->success()) {
+      qDebug() << fileName.toLocal8Bit().data();
+      if (!fileName.isEmpty()) {
+        m_fileReadMolecule->setData("fileName", fileName.toLocal8Bit().data());
+        m_recentFiles.prepend(fileName);
+        updateRecentFiles();
+      } else {
+        m_fileReadMolecule->setData("fileName", Core::Variant());
+      }
+      setMolecule(m_fileReadMolecule);
+      statusBar()->showMessage(tr("Molecule loaded (%1 atoms, %2 bonds)")
+                                 .arg(m_molecule->atomCount())
+                                 .arg(m_molecule->bondCount()),
+                               5000);
     } else {
-      m_fileReadMolecule->setData("fileName", Core::Variant());
+      QMessageBox::critical(this, tr("File error"),
+                            tr("Error while reading file '%1':\n%2")
+                              .arg(fileName)
+                              .arg(m_threadedReader->error()));
+      delete m_fileReadMolecule;
     }
-    setMolecule(m_fileReadMolecule);
-    statusBar()->showMessage(tr("Molecule loaded (%1 atoms, %2 bonds)")
-                               .arg(m_molecule->atomCount())
-                               .arg(m_molecule->bondCount()),
-                             5000);
-  } else {
-    QMessageBox::critical(this, tr("File error"),
-                          tr("Error while reading file '%1':\n%2")
-                            .arg(fileName)
-                            .arg(m_threadedReader->error()));
-    delete m_fileReadMolecule;
   }
-
-  getAdditionalMoleculeInfo(m_threadedReader->fileName());
 
   m_fileReadThread->deleteLater();
   m_fileReadThread = nullptr;
@@ -935,13 +938,6 @@ void MainWindow::exportGraphics()
   cColor[3] = alpha; // previous color
   scene->setBackgroundColor(cColor);
   glWidget->repaint();
-}
-
-void MainWindow::getAdditionalMoleculeInfo(QString fname)
-{
-  if (m_molecule)
-    MoleculeInfoDialog::resolve(this, *m_molecule,
-                                QFileInfo(fname).suffix().toLower());
 }
 
 void MainWindow::reassignCustomElements()
