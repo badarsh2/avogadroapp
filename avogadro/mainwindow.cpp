@@ -17,7 +17,7 @@
 #include "mainwindow.h"
 #include "aboutdialog.h"
 #include "avogadroappconfig.h"
-#include "backgroundfileformat.h"
+// #include "backgroundfileformat.h"
 #include "menubuilder.h"
 #include "ui_mainwindow.h"
 #include "viewfactory.h"
@@ -27,6 +27,7 @@
 #include <avogadro/io/cmlformat.h>
 #include <avogadro/io/fileformat.h>
 #include <avogadro/io/fileformatmanager.h>
+#include <avogadro/qtgui/backgroundfileformat.h>
 #include <avogadro/qtgui/customelementdialog.h>
 #include <avogadro/qtgui/extensionplugin.h>
 #include <avogadro/qtgui/fileformatdialog.h>
@@ -190,6 +191,7 @@ protected:
 
 using Io::FileFormat;
 using Io::FileFormatManager;
+using QtGui::BackgroundFileFormat;
 using QtGui::CustomElementDialog;
 using QtGui::ExtensionPlugin;
 using QtGui::ExtensionPluginFactory;
@@ -257,10 +259,12 @@ MainWindow::MainWindow(const QStringList& fileNames, bool disableSettings)
       extension->setParent(this);
       connect(this, &MainWindow::moleculeChanged, extension,
               &QtGui::ExtensionPlugin::setMolecule);
-      connect(extension, &QtGui::ExtensionPlugin::moleculeReady, this, &MainWindow::moleculeReady);
-      connect(extension, &QtGui::ExtensionPlugin::fileFormatsReady, this, &MainWindow::fileFormatsReady);
-      connect(extension, &QtGui::ExtensionPlugin::requestActiveTool,
-              this, &MainWindow::setActiveTool);
+      connect(extension, &QtGui::ExtensionPlugin::moleculeReady, this,
+              &MainWindow::moleculeReady);
+      connect(extension, &QtGui::ExtensionPlugin::fileFormatsReady, this,
+              &MainWindow::fileFormatsReady);
+      connect(extension, &QtGui::ExtensionPlugin::requestActiveTool, this,
+              &MainWindow::setActiveTool);
       connect(extension, &QtGui::ExtensionPlugin::requestActiveDisplayTypes,
               this, &MainWindow::setActiveDisplayTypes);
       buildMenu(extension);
@@ -359,10 +363,10 @@ void MainWindow::setupInterface()
   m_sceneTreeView->setAlternatingRowColors(true);
   m_sceneTreeView->header()->stretchLastSection();
   m_sceneTreeView->header()->setVisible(false);
-  connect(m_sceneTreeView, &QAbstractItemView::activated,
-          this, &MainWindow::sceneItemActivated);
-  connect(m_sceneTreeView, &QAbstractItemView::clicked,
-          this, &MainWindow::sceneItemActivated);
+  connect(m_sceneTreeView, &QAbstractItemView::activated, this,
+          &MainWindow::sceneItemActivated);
+  connect(m_sceneTreeView, &QAbstractItemView::clicked, this,
+          &MainWindow::sceneItemActivated);
 
   // Create the molecule model
   m_moleculeModel = new QtGui::MoleculeModel(this);
@@ -374,17 +378,17 @@ void MainWindow::setupInterface()
   m_moleculeTreeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
   m_moleculeTreeView->header()->setSectionResizeMode(1, QHeaderView::Fixed);
   m_moleculeTreeView->header()->resizeSection(1, 30);
-  connect(m_moleculeTreeView, &QAbstractItemView::activated,
-          this, &MainWindow::moleculeActivated);
-  connect(m_moleculeTreeView, &QAbstractItemView::clicked,
-          this, &MainWindow::moleculeActivated);
+  connect(m_moleculeTreeView, &QAbstractItemView::activated, this,
+          &MainWindow::moleculeActivated);
+  connect(m_moleculeTreeView, &QAbstractItemView::clicked, this,
+          &MainWindow::moleculeActivated);
 
   viewActivated(glWidget);
   buildTools();
   // Connect to the invalid context signal, check whether GL is initialized.
   // connect(m_glWidget, SIGNAL(rendererInvalid()), SLOT(rendererInvalid()));
-  connect(m_multiViewWidget, &QtGui::MultiViewWidget::activeWidgetChanged,
-          this, &MainWindow::viewActivated);
+  connect(m_multiViewWidget, &QtGui::MultiViewWidget::activeWidgetChanged, this,
+          &MainWindow::viewActivated);
 }
 
 void MainWindow::closeEvent(QCloseEvent* e)
@@ -440,7 +444,8 @@ void MainWindow::setMolecule(Molecule* mol)
     QString targetToolName =
       m_molecule->atomCount() > 0 ? "Navigator" : "Editor";
     setActiveTool(targetToolName);
-    connect(m_molecule, &QtGui::Molecule::changed, this, &MainWindow::markMoleculeDirty);
+    connect(m_molecule, &QtGui::Molecule::changed, this,
+            &MainWindow::markMoleculeDirty);
   }
 
   emit moleculeChanged(m_molecule);
@@ -626,10 +631,12 @@ bool MainWindow::openFile(const QString& fileName, Io::FileFormat* reader)
     tr("Opening file '%1'\nwith '%2'").arg(fileName).arg(ident));
   /// @todo Add API to abort file ops
   m_progressDialog->setCancelButton(nullptr);
-  connect(m_fileReadThread, &QThread::started, m_threadedReader, &BackgroundFileFormat::read);
-  connect(m_threadedReader, &BackgroundFileFormat::finished, m_fileReadThread, &QThread::quit);
-  connect(m_threadedReader, &BackgroundFileFormat::finished,
-          this, &MainWindow::backgroundReaderFinished);
+  connect(m_fileReadThread, &QThread::started, m_threadedReader,
+          &BackgroundFileFormat::read);
+  connect(m_threadedReader, &BackgroundFileFormat::finished, m_fileReadThread,
+          &QThread::quit);
+  connect(m_threadedReader, &BackgroundFileFormat::finished, this,
+          &MainWindow::backgroundReaderFinished);
 
   // Start the file operation
   m_fileReadThread->start();
@@ -1157,8 +1164,8 @@ bool MainWindow::saveFileAs(const QString& fileName, Io::FileFormat* writer,
   // Start the file operation
   m_progressDialog->show();
   if (async) {
-    connect(m_threadedWriter, &BackgroundFileFormat::finished,
-            this, &MainWindow::backgroundWriterFinished);
+    connect(m_threadedWriter, &BackgroundFileFormat::finished, this,
+            &MainWindow::backgroundWriterFinished);
     m_fileWriteThread->start();
     return true;
   } else {
@@ -1510,15 +1517,15 @@ void MainWindow::buildMenu()
   m_viewPerspective->setCheckable(true);
   m_viewPerspective->setChecked(true);
   m_menuBuilder->addAction(viewPath, m_viewPerspective, 10);
-  connect(m_viewPerspective, &QAction::triggered,
-          this, &MainWindow::setProjectionPerspective);
+  connect(m_viewPerspective, &QAction::triggered, this,
+          &MainWindow::setProjectionPerspective);
 
   m_viewOrthographic = new QAction(tr("Orthographic"), this);
   m_viewOrthographic->setCheckable(true);
   m_viewOrthographic->setChecked(false);
   m_menuBuilder->addAction(viewPath, m_viewOrthographic, 10);
-  connect(m_viewOrthographic, &QAction::triggered,
-          this, &MainWindow::setProjectionOrthographic);
+  connect(m_viewOrthographic, &QAction::triggered, this,
+          &MainWindow::setProjectionOrthographic);
 
   connect(m_viewPerspective, &QAction::triggered, m_viewOrthographic,
           &QAction::toggle);
@@ -1661,25 +1668,27 @@ bool MainWindow::saveFileIfNeeded()
     // the static functions. This is more work, but gives us some nice
     // fine-grain control. This helps both on Windows and Mac
     // look more "native."
-    QPointer<QMessageBox> msgBox = new QMessageBox(QMessageBox::Warning,
-                       tr( "Avogadro" ),
-                       tr( "Do you want to save the changes you made in the document?" ),
-                       QMessageBox::Save | QMessageBox::Discard
-                       | QMessageBox::Cancel,
-                       this);
+    QPointer<QMessageBox> msgBox = new QMessageBox(
+      QMessageBox::Warning, tr("Avogadro"),
+      tr("Do you want to save the changes you made in the document?"),
+      QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, this);
 
     // On Mac, this will make a sheet relative to the window
     // Unfortunately, it also closes the window when the box disappears!
     // msgBox->setWindowModality(Qt::WindowModal);
     // second line of text
-    msgBox->setInformativeText(tr("Your changes will be lost if you don't save them." ));
+    msgBox->setInformativeText(
+      tr("Your changes will be lost if you don't save them."));
     msgBox->setDefaultButton(QMessageBox::Save);
 
     // OK, now add shortcuts for save and discard
-    msgBox->button(QMessageBox::Save)->setShortcut(QKeySequence(tr("Ctrl+S", "Save")));
-    msgBox->button(QMessageBox::Discard)->setShortcut(QKeySequence(tr("Ctrl+D", "Discard")));
+    msgBox->button(QMessageBox::Save)
+      ->setShortcut(QKeySequence(tr("Ctrl+S", "Save")));
+    msgBox->button(QMessageBox::Discard)
+      ->setShortcut(QKeySequence(tr("Ctrl+D", "Discard")));
     //    msgBox->setButtonText(QMessageBox::Save,
-    //                          isDefaultFileName(d->fileName) ? tr("Save...") : tr("Save"));
+    //                          isDefaultFileName(d->fileName) ? tr("Save...") :
+    //                          tr("Save"));
 
     int response = msgBox->exec();
 

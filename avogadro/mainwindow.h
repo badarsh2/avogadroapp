@@ -35,7 +35,7 @@ class AboutDialog;
 
 namespace Avogadro {
 
-class BackgroundFileFormat;
+// class BackgroundFileFormat;
 class MenuBuilder;
 class ViewFactory;
 
@@ -48,6 +48,7 @@ class FileFormat;
 }
 
 namespace QtGui {
+class BackgroundFileFormat;
 class ScenePlugin;
 class ToolPlugin;
 class ExtensionPlugin;
@@ -323,8 +324,8 @@ private:
   // These variables take care of background file reading.
   QThread* m_fileReadThread;
   QThread* m_fileWriteThread;
-  BackgroundFileFormat* m_threadedReader;
-  BackgroundFileFormat* m_threadedWriter;
+  QtGui::BackgroundFileFormat* m_threadedReader;
+  QtGui::BackgroundFileFormat* m_threadedWriter;
   QProgressDialog* m_progressDialog;
   QtGui::Molecule* m_fileReadMolecule;
 

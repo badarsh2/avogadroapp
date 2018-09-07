@@ -24,7 +24,6 @@ set(avogadro_srcs
   aboutdialog.cpp
   application.cpp
   avogadro.cpp
-  backgroundfileformat.cpp
   mainwindow.cpp
   menubuilder.cpp
   viewfactory.cpp
